@@ -3,12 +3,22 @@
   "version": "1.0.0",
   "description": "NodeJS utility to help work with Swagger Spec",
   "main": "index.js",
+  "watch": {
+    "start": {
+      "patterns": [
+        "src"
+      ],
+      "extensions": "ts",
+      "quiet": false
+    }
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "ts-node src/index.ts",
+    "start:watch": "npm-watch start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build": "rimraf dist && tsc"
+    "build": "rimraf dist && tsc",
+    "test": "echo \"Error: no test specified\" && exit 0"
   },
   "repository": {
     "type": "git",
@@ -54,6 +64,7 @@
     "eslint-plugin-tsc": "^2.0.0",
     "husky": "^4.3.0",
     "lint-staged": "^10.5.1",
+    "npm-watch": "^0.7.0",
     "prettier": "^2.1.2",
     "pretty-quick": "^3.1.0",
     "rimraf": "^3.0.2",

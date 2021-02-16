@@ -1,32 +1,34 @@
 import { OpenAPIV3 } from "openapi-types";
 
+import type { SwaggerWalker } from "../SwaggerWalker";
+
 export class SchemaInfo implements Required<OpenAPIV3.InfoObject> {
-  constructor(private schema: OpenAPIV3.Document) {}
+  constructor(private walker: SwaggerWalker) {}
   get version(): string {
-    return this.schema.info.version || "";
+    return this.walker.schema.info.version || "";
   }
   get title(): string {
-    return this.schema.info.title || "";
+    return this.walker.schema.info.title || "";
   }
   get description(): string {
-    return this.schema.info.description || "";
+    return this.walker.schema.info.description || "";
   }
   get termsOfService(): string {
-    return this.schema.info.termsOfService || "";
+    return this.walker.schema.info.termsOfService || "";
   }
   get contact(): OpenAPIV3.ContactObject {
     return {
       email: "",
       name: "",
       url: "",
-      ...(this.schema.info.contact || {}),
+      ...(this.walker.schema.info.contact || {}),
     };
   }
   get license(): OpenAPIV3.LicenseObject {
     return {
       name: "",
       url: "",
-      ...(this.schema.info.license || {}),
+      ...(this.walker.schema.info.license || {}),
     };
   }
 }

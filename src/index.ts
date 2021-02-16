@@ -21,6 +21,12 @@ parseSwagger({
   spec: schema,
 }).then((swaggerWalker) => {
   if (swaggerWalker) {
-    console.info("FF", swaggerWalker.findByRef("#/components/schemas/user"));
+    console.info(
+      "FF"
+      // swaggerWalker.components.find({
+      //   kind: "schemas",
+      //   name: "trees",
+      // })
+    );
   }
 });

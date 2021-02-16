@@ -1,6 +1,8 @@
 import _ from "lodash";
 import { OpenAPIV3 } from "openapi-types";
 
+import { isReferenceObject } from "./utils/isReferenceObject";
+
 type FoundByRefDocument =
   | OpenAPIV3.SchemaObject
   | OpenAPIV3.SchemaObject
@@ -15,15 +17,15 @@ type FoundByRefDocument =
   | OpenAPIV3.LinkObject
   | OpenAPIV3.CallbackObject;
 
-export class RefFinder {
-  constructor(private schema: OpenAPIV3.Document) {}
+type RawRefType = unknown;
 
-  findByRef<T extends FoundByRefDocument>(
-    rawRef?:
-      | OpenAPIV3.ReferenceObject
-      | OpenAPIV3.ReferenceObject["$ref"]
-      | null
-      | undefined
+export class RefFinder {
+  parsedRefs = new Map<string, unknown>();
+
+  constructor(private _schema: OpenAPIV3.Document) {}
+
+  public findByRef<T extends FoundByRefDocument>(
+    rawRef?: RawRefType
   ): (T & { refName: string }) | null {
     if (!rawRef) return null;
 
@@ -34,7 +36,7 @@ export class RefFinder {
     if (typeof rawRef === "string") {
       ref = this.reconcileRef(rawRef);
     }
-    if (typeof rawRef === "object" && rawRef.$ref) {
+    if (isReferenceObject(rawRef)) {
       ref = this.reconcileRef(rawRef.$ref);
     }
 
@@ -45,7 +47,7 @@ export class RefFinder {
 
     const parts = ref.split("/").filter((part) => part && part !== "#");
 
-    const foundDocument = _.get(this.schema, parts, null) as T | null;
+    const foundDocument = _.get(this._schema, parts, null) as T | null;
 
     if (!foundDocument) {
       console.warn(
@@ -59,6 +61,13 @@ export class RefFinder {
       ...foundDocument,
       refName: ref,
     };
+  }
+  public setParsedData<T>(ref: string, value: T) {
+    this.parsedRefs.set(ref, value);
+  }
+
+  public findParsedByRef<T>(ref: string): T | null {
+    return (this.parsedRefs.get(ref) || null) as T | null;
   }
 
   private reconcileRef(ref: string): string {
