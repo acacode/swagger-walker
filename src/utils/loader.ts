@@ -9,7 +9,7 @@ import converter from "swagger2openapi";
 import fs from "fs";
 import https from "https";
 
-import { ParseSwaggerOptions } from ".";
+import { ParseSwaggerOptions } from "..";
 
 const parseSwaggerFile = (
   file: string | Record<string, unknown>
