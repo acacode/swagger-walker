@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { OpenAPIV3 } from "openapi-types";
 
-import schema from "./authentic.json";
-import { FixedOpenAPIV3Doc } from "./interfaces/swagger";
+import schema from "./github.json";
+import { OpenAPI } from "./interfaces/swagger";
+import { SwaggerWalker } from "./SwaggerWalker";
+import { fixSwaggerScheme } from "./utils/fixSwaggerScheme";
 import { getSwaggerObject } from "./utils/loader";
 import { recursiveUnfillRefs } from "./utils/recursiveUnfillRefs";
 
@@ -13,14 +14,16 @@ export interface ParseSwaggerOptions {
   disableStrictSSL?: boolean;
 }
 
-export const createSwaggerWalker = async (
+const getSwaggerDocument = async (
   options: ParseSwaggerOptions
-): Promise<any> => {
+): Promise<OpenAPI.Document | null> => {
   const conversion = await getSwaggerObject(options);
 
   if (!conversion) return null;
 
-  const fixedDoc: FixedOpenAPIV3Doc = {
+  fixSwaggerScheme(conversion.usageSchema, conversion.originalSchema);
+
+  const fixedDoc: OpenAPI.RawStrictDocument = {
     components: {},
     externalDocs: { url: "" },
     servers: [],
@@ -36,7 +39,22 @@ export const createSwaggerWalker = async (
     },
   };
 
-  return recursiveUnfillRefs(fixedDoc);
+  const document = (await recursiveUnfillRefs(
+    fixedDoc,
+    fixedDoc
+  )) as OpenAPI.Document;
+
+  return document;
+};
+
+export const createSwaggerWalker = async (
+  options: ParseSwaggerOptions
+): Promise<SwaggerWalker | null> => {
+  const document = await getSwaggerDocument(options);
+
+  if (!document) return null;
+
+  return new SwaggerWalker(document);
 };
 
 createSwaggerWalker({

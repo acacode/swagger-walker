@@ -108,59 +108,6 @@ const convertSwaggerObject = (
   });
 };
 
-const fixSwaggerScheme = (
-  usage: OpenAPIV3.Document,
-  original: OpenAPIV3.Document | OpenAPIV2.Document
-) => {
-  const usagePaths = _.get(usage, "paths");
-  const originalPaths = _.get(original, "paths");
-
-  // walk by routes
-  _.each(usagePaths, (usagePathObject, route) => {
-    const originalPathObject = _.get(originalPaths, route);
-
-    // walk by methods
-    _.each(usagePathObject, (usageRouteInfo, methodName) => {
-      const originalRouteInfo = _.get(originalPathObject, methodName);
-      const usageRouteParams = _.get(usageRouteInfo, "parameters", []);
-      const originalRouteParams = _.get(originalRouteInfo, "parameters", []);
-
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      usageRouteInfo.consumes = _.uniq(
-        _.compact([
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          ...(usageRouteInfo.consumes || []),
-          ...(originalRouteInfo.consumes || []),
-        ])
-      );
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      usageRouteInfo.produces = _.uniq(
-        _.compact([
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          ...(usageRouteInfo.produces || []),
-          ...(originalRouteInfo.produces || []),
-        ])
-      );
-
-      _.each(originalRouteParams, (originalRouteParam) => {
-        const existUsageParam = _.find(
-          usageRouteParams,
-          (param) =>
-            originalRouteParam.in === param.in &&
-            originalRouteParam.name === param.name
-        );
-        if (!existUsageParam) {
-          usageRouteParams.push(originalRouteParam);
-        }
-      });
-    });
-  });
-};
-
 export const getSwaggerObject = async ({
   path,
   url,
@@ -186,10 +133,6 @@ export const getSwaggerObject = async ({
     // eslint-disable-next-line no-console
     console.error("🥵 Failed to load swagger schema", e);
     return null;
-  }
-
-  if (converted) {
-    fixSwaggerScheme(converted.usageSchema, converted.originalSchema);
   }
 
   return converted;

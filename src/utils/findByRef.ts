@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-import { FixedOpenAPIV3Doc } from "../interfaces/swagger";
+import { StrictOpenAPIV3Doc } from "../interfaces/swagger";
 
 import { isReferenceObject } from "./isReferenceObject";
 
@@ -19,7 +19,7 @@ const reconcileRef = (ref: string): string => {
 };
 
 export const findByRef = <T extends unknown>(
-  schema: FixedOpenAPIV3Doc,
+  schema: StrictOpenAPIV3Doc,
   rawRef?: unknown
 ): ((T & { $referencedTo: string }) | T) | null => {
   if (!rawRef) return null;
