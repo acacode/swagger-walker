@@ -45186,6 +45186,20 @@
   },
   "components": {
     "schemas": {
+      "recursive-object": {
+        "type": "object",
+        "description": "RECURSIVE",
+        "properties": {
+          "id": {
+            "description": "Unique identifier of the GitHub app",
+            "example": 37,
+            "type": "integer"
+          },
+          "bar": {
+            "$ref": "#/components/schemas/recursive-object"
+          }
+        }
+      },
       "simple-user": {
         "title": "Simple User",
         "description": "Simple User",

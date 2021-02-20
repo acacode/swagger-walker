@@ -1,4 +1,4 @@
-import { OpenAPIV3 } from "openapi-types";
+import { OpenAPIV2, OpenAPIV3 } from "openapi-types";
 
 import schema from "./github.json";
 import { OpenAPI } from "./interfaces/swagger";
@@ -16,14 +16,18 @@ export interface ParseSwaggerOptions {
 
 const getSwaggerDocument = async (
   options: ParseSwaggerOptions
-): Promise<OpenAPI.Document | null> => {
+): Promise<{
+  document: OpenAPI.Document;
+  original: OpenAPIV3.Document | OpenAPIV2.Document;
+  convertedFromSwagger2: boolean;
+} | null> => {
   const conversion = await getSwaggerObject(options);
 
   if (!conversion) return null;
 
   fixSwaggerScheme(conversion.usageSchema, conversion.originalSchema);
 
-  const fixedDoc: OpenAPI.RawStrictDocument = {
+  const document = await recursiveUnfillRefs({
     components: {},
     externalDocs: { url: "" },
     servers: [],
@@ -37,14 +41,13 @@ const getSwaggerDocument = async (
       version: "",
       ...((conversion.usageSchema.info as Partial<OpenAPIV3.InfoObject>) || {}),
     },
+  });
+
+  return {
+    document: document as OpenAPI.Document,
+    original: conversion.originalSchema,
+    convertedFromSwagger2: conversion.convertedFromSwagger2,
   };
-
-  const document = (await recursiveUnfillRefs(
-    fixedDoc,
-    fixedDoc
-  )) as OpenAPI.Document;
-
-  return document;
 };
 
 export const createSwaggerWalker = async (
@@ -54,7 +57,11 @@ export const createSwaggerWalker = async (
 
   if (!document) return null;
 
-  return new SwaggerWalker(document);
+  return new SwaggerWalker(
+    document.document,
+    document.original,
+    document.convertedFromSwagger2
+  );
 };
 
 createSwaggerWalker({

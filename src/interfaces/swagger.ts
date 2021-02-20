@@ -133,7 +133,7 @@ export namespace OpenAPI {
     [url: string]: PathItemObject;
   }
 
-  export type OperationObject<T extends {} = {}> = {
+  export interface OperationObject {
     tags?: string[];
     summary?: string;
     description?: string;
@@ -148,20 +148,20 @@ export namespace OpenAPI {
     deprecated?: boolean;
     security?: OpenAPIV3.SecurityRequirementObject[];
     servers?: OpenAPIV3.ServerObject[];
-  } & T;
+  }
 
-  export interface PathItemObject<T extends {} = {}> {
+  export interface PathItemObject {
     $referencedTo?: string;
     summary?: string;
     description?: string;
-    get?: OperationObject<T>;
-    put?: OperationObject<T>;
-    post?: OperationObject<T>;
-    delete?: OperationObject<T>;
-    options?: OperationObject<T>;
-    head?: OperationObject<T>;
-    patch?: OperationObject<T>;
-    trace?: OperationObject<T>;
+    get?: OperationObject;
+    put?: OperationObject;
+    post?: OperationObject;
+    delete?: OperationObject;
+    options?: OperationObject;
+    head?: OperationObject;
+    patch?: OperationObject;
+    trace?: OperationObject;
     servers?: OpenAPIV3.ServerObject[];
     parameters?: ParameterObject[];
   }

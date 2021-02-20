@@ -18,6 +18,8 @@ const reconcileRef = (ref: string): string => {
   );
 };
 
+const saveMap = new Map<string, unknown>();
+
 export const findByRef = <T extends unknown>(
   schema: StrictOpenAPIV3Doc,
   rawRef?: unknown

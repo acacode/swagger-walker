@@ -1,8 +1,9 @@
+/* eslint-disable max-lines */
 import _ from "lodash";
 import { OpenAPIV2, OpenAPIV3 } from "openapi-types";
 
 import { OpenAPI } from "./interfaces/swagger";
-import { DeepRequired } from "./types/common";
+import { DeepRequired, ValueOf } from "./types/common";
 
 type ComponentKinds = keyof ISwaggerWalker["components"];
 
@@ -11,27 +12,43 @@ interface ComponentExtras {
   $kind: ComponentKinds;
 }
 
-interface PathExtras {
+interface SwaggerWalkerPathOperation {
   $pattern: string;
-}
-
-interface OperationExtras extends PathExtras {
+  $method: string;
+  $internalRef: string;
   consumes: OpenAPIV2.MimeTypes;
   produces: OpenAPIV2.MimeTypes;
-}
 
-interface SwaggerWalkerPath extends PathExtras {
-  $referencedTo?: string;
+  tags: string[];
   summary: string;
   description: string;
-  get?: OpenAPI.OperationObject & OperationExtras;
-  put?: OpenAPI.OperationObject & OperationExtras;
-  post?: OpenAPI.OperationObject & OperationExtras;
-  delete?: OpenAPI.OperationObject & OperationExtras;
-  options?: OpenAPI.OperationObject & OperationExtras;
-  head?: OpenAPI.OperationObject & OperationExtras;
-  patch?: OpenAPI.OperationObject & OperationExtras;
-  trace?: OpenAPI.OperationObject & OperationExtras;
+  externalDocs: OpenAPIV3.ExternalDocumentationObject;
+  operationId: string | null;
+  parameters: OpenAPI.ParameterObject[];
+  requestBody: Required<OpenAPI.RequestBodyObject>;
+  responses: OpenAPI.ResponsesObject;
+  callbacks: {
+    [callback: string]: OpenAPI.CallbackObject;
+  };
+  deprecated: boolean;
+  security: OpenAPIV3.SecurityRequirementObject[];
+  servers: OpenAPIV3.ServerObject[];
+}
+
+interface SwaggerWalkerPath {
+  $pattern: string;
+  $referencedTo?: string;
+  $internalRef: string;
+  summary: string;
+  description: string;
+  get: SwaggerWalkerPathOperation | null;
+  put: SwaggerWalkerPathOperation | null;
+  post: SwaggerWalkerPathOperation | null;
+  delete: SwaggerWalkerPathOperation | null;
+  options: SwaggerWalkerPathOperation | null;
+  head: SwaggerWalkerPathOperation | null;
+  patch: SwaggerWalkerPathOperation | null;
+  trace: SwaggerWalkerPathOperation | null;
   servers: OpenAPIV3.ServerObject[];
   parameters: OpenAPI.ParameterObject[];
 }
@@ -58,6 +75,8 @@ export interface ISwaggerWalker {
 }
 
 export class SwaggerWalker implements ISwaggerWalker {
+  // $refsMap = new Map<string, unknown>();
+
   openapi: ISwaggerWalker["openapi"];
   info: ISwaggerWalker["info"];
   servers: ISwaggerWalker["servers"];
@@ -67,7 +86,11 @@ export class SwaggerWalker implements ISwaggerWalker {
   tags: ISwaggerWalker["tags"];
   externalDocs: ISwaggerWalker["externalDocs"];
 
-  constructor(public document: OpenAPI.Document) {
+  constructor(
+    public document: OpenAPI.Document,
+    public original: OpenAPIV3.Document | OpenAPIV2.Document,
+    public convertedFromSwagger2: boolean = false
+  ) {
     this.openapi = document.openapi;
     this.info = this.collectInfo(document.info);
     this.servers = this.collectServers(document.servers);
@@ -105,45 +128,125 @@ export class SwaggerWalker implements ISwaggerWalker {
     return _.compact(servers);
   }
 
+  private createParameter = (
+    parameter: OpenAPI.ParameterObject
+  ): OpenAPI.ParameterObject => {
+    return parameter;
+  };
+
   private createOperation(
     $pattern: string,
-    operation?: OpenAPI.OperationObject
-  ): undefined | (OpenAPI.OperationObject & OperationExtras) {
-    if (!operation) return;
+    $method: string,
+    rawOperation?: OpenAPI.OperationObject
+  ): null | SwaggerWalkerPathOperation {
+    if (!rawOperation) return null;
 
-    return {
-      ...operation,
+    const $internalRef = `#/paths/${$pattern}/${$method}`;
+
+    const operation: SwaggerWalkerPathOperation = {
+      ...rawOperation,
       $pattern,
-      consumes: _.get(operation, "consumes", []),
-      produces: _.get(operation, "produces", []),
+      $method,
+      $internalRef,
+      tags: rawOperation.tags || [],
+      callbacks: rawOperation.callbacks || {},
+      deprecated: !!rawOperation.deprecated,
+      externalDocs: _.merge<
+        SwaggerWalkerPathOperation["externalDocs"],
+        OpenAPI.OperationObject["externalDocs"]
+      >(
+        {
+          url: "",
+          description: "",
+        },
+        rawOperation.externalDocs
+      ),
+      operationId: rawOperation.operationId || null,
+      parameters: _.uniqBy(
+        [
+          ..._.map(rawOperation.parameters || [], this.createParameter),
+          ..._.reduce<string, OpenAPI.ParameterObject[]>(
+            ($pattern || "").match(
+              /({(([a-zA-Z]-?_?){1,})([0-9]{1,})?})|(:(([a-zA-Z]-?_?){1,})([0-9]{1,})?:?)/g
+            ),
+            (acc, match) => {
+              return [
+                ...acc,
+                this.createParameter({
+                  name: _.replace(match, /\{|\}|:/g, ""),
+                  required: true,
+                  description: "",
+                  schema: {
+                    type: "string",
+                  },
+                  in: "path",
+                }),
+              ];
+            },
+            []
+          ),
+        ],
+        (paramter) => `${paramter.name}-${paramter.in}`
+      ),
+      requestBody: _.merge<
+        SwaggerWalkerPathOperation["requestBody"],
+        OpenAPI.OperationObject["requestBody"]
+      >(
+        {
+          content: {},
+          description: "",
+          required: false,
+        },
+        rawOperation.requestBody
+      ),
+      responses: rawOperation.responses || {},
+      security: rawOperation.security || [],
+      servers: rawOperation.servers || [],
+      summary: rawOperation.summary || "",
+      description: rawOperation.description || "",
+      consumes: _.get(rawOperation, "consumes", []),
+      produces: _.get(rawOperation, "produces", []),
     };
+
+    // this.$refsMap.set($internalRef, operation);
+
+    return operation;
   }
 
   private collectPaths(
     paths: OpenAPI.Document["paths"]
   ): ISwaggerWalker["paths"] {
-    return _.map(paths, (path, $pattern) => ({
-      ...path,
-      $pattern,
-      description: path.description || "",
-      parameters: path.parameters || [],
-      servers: path.servers || [],
-      summary: path.summary || "",
-      delete: this.createOperation($pattern, path.delete),
-      get: this.createOperation($pattern, path.get),
-      head: this.createOperation($pattern, path.head),
-      patch: this.createOperation($pattern, path.patch),
-      post: this.createOperation($pattern, path.post),
-      put: this.createOperation($pattern, path.put),
-      trace: this.createOperation($pattern, path.trace),
-      options: this.createOperation($pattern, path.options),
-    }));
+    return _.map(paths, (rawPath, $pattern) => {
+      const $internalRef = `#/paths/${$pattern}`;
+
+      const path: SwaggerWalkerPath = {
+        ...rawPath,
+        $pattern,
+        $internalRef,
+        description: rawPath.description || "",
+        parameters: rawPath.parameters || [],
+        servers: rawPath.servers || [],
+        summary: rawPath.summary || "",
+        delete: this.createOperation($pattern, "delete", rawPath.delete),
+        get: this.createOperation($pattern, "get", rawPath.get),
+        head: this.createOperation($pattern, "head", rawPath.head),
+        patch: this.createOperation($pattern, "patch", rawPath.patch),
+        post: this.createOperation($pattern, "post", rawPath.post),
+        put: this.createOperation($pattern, "put", rawPath.put),
+        trace: this.createOperation($pattern, "trace", rawPath.trace),
+        options: this.createOperation($pattern, "options", rawPath.options),
+      };
+
+      // this.$refsMap.set($internalRef, path);
+
+      return path;
+    });
   }
 
   private collectComponents(
     components: OpenAPI.Document["components"]
   ): ISwaggerWalker["components"] {
-    return _.reduce(
+    return _.reduce<OpenAPI.ComponentsObject, ISwaggerWalker["components"]>(
       components,
       (acc, group, groupName) => {
         if (!acc[groupName as ComponentKinds]) {
@@ -151,15 +254,15 @@ export class SwaggerWalker implements ISwaggerWalker {
         }
 
         _.each(group, (component, name) => {
-          const newComponent: ISwaggerWalker["components"][keyof ISwaggerWalker["components"]][0] = {
+          const newComponent: ValueOf<ISwaggerWalker["components"]>[0] = {
             $kind: groupName as ComponentKinds,
             $name: name,
             ...component,
           };
 
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          acc[groupName as ComponentKinds].push(newComponent);
+          (acc as {
+            [key: string]: ValueOf<ISwaggerWalker["components"]>[0][];
+          })[groupName].push(newComponent);
         });
 
         return acc;

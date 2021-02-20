@@ -8,15 +8,22 @@ import { isReferenceObject } from "./isReferenceObject";
 
 export const recursiveUnfillRefs = async (
   docPart: unknown,
-  fullDoc: StrictOpenAPIV3Doc
+  fullDoc: StrictOpenAPIV3Doc = docPart as StrictOpenAPIV3Doc
 ): Promise<unknown> => {
   if (_.isArray(docPart)) {
-    return await Promise.all(
-      _.map(docPart, (part) => recursiveUnfillRefs(part, fullDoc))
+    return _.compact(
+      await Promise.all(
+        _.map(docPart, (part) => recursiveUnfillRefs(part, fullDoc))
+      )
     );
   }
 
   if (_.isObject(docPart)) {
+    if (isReferenceObject(docPart)) {
+      const found = await findByRef(fullDoc, docPart);
+      return recursiveUnfillRefs(found, fullDoc);
+    }
+
     const keys = _.keys(docPart);
     const fixedDocPart: Record<string, unknown> = {};
 
@@ -28,7 +35,7 @@ export const recursiveUnfillRefs = async (
       } else if (_.isObject(value)) {
         if (isReferenceObject(value)) {
           const found = await findByRef(fullDoc, value);
-          fixedDocPart[key] = found;
+          fixedDocPart[key] = recursiveUnfillRefs(found, fullDoc);
         } else {
           fixedDocPart[key] = await recursiveUnfillRefs(value, fullDoc);
         }
