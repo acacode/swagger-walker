@@ -4,6 +4,9 @@ NodeJS utility to help work with Swagger Spec
 It eats any version and format of Swagger schema and return strict internal Swagger schema representation  
 
 
+# ⚠⚠⚠ WIP ⚠⚠⚠   
+# npm package currently is not exist  
+
 ## Usage  
 
 1. Install  
