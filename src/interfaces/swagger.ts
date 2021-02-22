@@ -52,6 +52,9 @@ export namespace OpenAPI {
   export type SchemaObject = ArraySchemaObject | NonArraySchemaObject;
 
   export interface BaseSchemaObject {
+    $internalRef?: string;
+    $referencedTo?: string;
+    $recursiveReference?: boolean;
     title?: string;
     description?: string;
     format?: string;
@@ -97,6 +100,9 @@ export namespace OpenAPI {
   }
 
   export interface ParameterBaseObject {
+    $internalRef?: string;
+    $referencedTo?: string;
+    $recursiveReference?: boolean;
     description?: string;
     required?: boolean;
     deprecated?: boolean;
@@ -151,7 +157,9 @@ export namespace OpenAPI {
   }
 
   export interface PathItemObject {
+    $internalRef?: string;
     $referencedTo?: string;
+    $recursiveReference?: boolean;
     summary?: string;
     description?: string;
     get?: OperationObject;

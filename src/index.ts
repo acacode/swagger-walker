@@ -5,7 +5,7 @@ import { OpenAPI } from "./interfaces/swagger";
 import { SwaggerWalker } from "./SwaggerWalker";
 import { fixSwaggerScheme } from "./utils/fixSwaggerScheme";
 import { getSwaggerObject } from "./utils/loader";
-import { completeRefs, unfillRefs } from "./utils/recursiveUnfillRefs";
+import { completeRefs, unfillRefs } from "./utils/unfillRefs";
 
 export interface ParseSwaggerOptions {
   path?: string;
@@ -27,21 +27,7 @@ const getSwaggerDocument = async (
 
   fixSwaggerScheme(conversion.usageSchema, conversion.originalSchema);
 
-  const document = await unfillRefs({
-    components: {},
-    externalDocs: { url: "" },
-    servers: [],
-    tags: [],
-    security: [],
-    ...conversion.usageSchema,
-    paths: conversion.usageSchema.paths || {},
-    openapi: conversion.usageSchema.openapi || "",
-    info: {
-      title: "",
-      version: "",
-      ...((conversion.usageSchema.info as Partial<OpenAPIV3.InfoObject>) || {}),
-    },
-  });
+  const document = await unfillRefs(conversion.usageSchema);
 
   await completeRefs(document);
 

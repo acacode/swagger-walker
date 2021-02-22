@@ -18,7 +18,7 @@ class ReferenceData {
   constructor(private path: string[], private ref: string) {}
 
   async complete(partResultedDoc: unknown): Promise<unknown> {
-    const foo = await findByRef(
+    const refData = await findByRef(
       partResultedDoc as StrictOpenAPIV3Doc,
       this.ref
     );
@@ -26,13 +26,13 @@ class ReferenceData {
     const pathFromRef = pathToRef(this.path);
     const isRecursive = _.includes(pathFromRef, ref);
 
-    if (isRecursive && _.isObject(foo)) {
+    if (isRecursive && _.isObject(refData)) {
       const recursivePath = removeRefPart(pathFromRef, ref);
-      _.set(foo, recursivePath, foo);
+      _.set(refData, "$recursiveReference", true);
+      _.set(refData, recursivePath, refData);
     }
 
-    // TODO:
-    return foo;
+    return refData;
   }
 }
 
