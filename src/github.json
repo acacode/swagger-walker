@@ -45200,6 +45200,28 @@
           }
         }
       },
+      "foo-bar": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "bar": {
+            "$ref": "#/components/schemas/bar-foo"
+          }
+        }
+      },
+      "bar-foo": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "foo": {
+            "$ref": "#/components/schemas/foo-bar"
+          }
+        }
+      },
       "simple-user": {
         "title": "Simple User",
         "description": "Simple User",

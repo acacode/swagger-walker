@@ -3,6 +3,8 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 import { OpenAPIV3 } from "openapi-types";
 
+import { ValueOf } from "../types/common";
+
 export type StrictOpenAPIV3Doc = Required<
   Omit<
     OpenAPIV3.Document,
@@ -19,7 +21,7 @@ export namespace OpenAPI {
   >;
   export type RawStrictDocument = Required<RawDocument>;
 
-  export interface MediaTypeObject {
+  export interface MediaTypeObject extends CompletedReferenceInfo {
     schema?: OpenAPIV3.SchemaObject;
     example?: unknown;
     examples?: {
@@ -35,7 +37,7 @@ export namespace OpenAPI {
     in: string;
   }
   export interface HeaderObject extends ParameterBaseObject {}
-  export interface RequestBodyObject {
+  export interface RequestBodyObject extends CompletedReferenceInfo {
     description?: string;
     content: {
       [media: string]: MediaTypeObject;
@@ -52,9 +54,6 @@ export namespace OpenAPI {
   export type SchemaObject = ArraySchemaObject | NonArraySchemaObject;
 
   export interface BaseSchemaObject {
-    $internalRef?: string;
-    $referencedTo?: string;
-    $recursiveReference?: boolean;
     title?: string;
     description?: string;
     format?: string;
@@ -99,12 +98,10 @@ export namespace OpenAPI {
     type?: NonArraySchemaObjectType;
   }
 
-  export interface ParameterBaseObject {
-    $internalRef?: string;
-    $referencedTo?: string;
-    $recursiveReference?: boolean;
+  export interface ParameterBaseObject extends CompletedReferenceInfo {
     description?: string;
     required?: boolean;
+    nullable?: boolean;
     deprecated?: boolean;
     allowEmptyValue?: boolean;
     style?: string;
@@ -116,11 +113,11 @@ export namespace OpenAPI {
       [media: string]: OpenAPIV3.ExampleObject;
     };
     content?: {
-      [media: string]: OpenAPIV3.MediaTypeObject;
+      [media: string]: MediaTypeObject;
     };
   }
 
-  export interface ResponseObject {
+  export interface ResponseObject extends CompletedReferenceInfo {
     description: string;
     headers?: {
       [header: string]: HeaderObject;
@@ -139,7 +136,7 @@ export namespace OpenAPI {
     [url: string]: PathItemObject;
   }
 
-  export interface OperationObject {
+  export interface OperationObject extends OpenAPI.CompletedReferenceInfo {
     tags?: string[];
     summary?: string;
     description?: string;
@@ -156,10 +153,7 @@ export namespace OpenAPI {
     servers?: OpenAPIV3.ServerObject[];
   }
 
-  export interface PathItemObject {
-    $internalRef?: string;
-    $referencedTo?: string;
-    $recursiveReference?: boolean;
+  export interface PathItemObject extends CompletedReferenceInfo {
     summary?: string;
     description?: string;
     get?: OperationObject;
@@ -174,6 +168,18 @@ export namespace OpenAPI {
     parameters?: ParameterObject[];
   }
 
+  export interface ExampleObject extends CompletedReferenceInfo {
+    summary?: string;
+    description?: string;
+    value?: any;
+    externalValue?: string;
+  }
+
+  type SecuritySchemeObject = OpenAPIV3.SecuritySchemeObject &
+    CompletedReferenceInfo;
+
+  type LinkObject = OpenAPIV3.LinkObject & CompletedReferenceInfo;
+
   export interface ComponentsObject {
     schemas?: {
       [key: string]: SchemaObject;
@@ -185,7 +191,7 @@ export namespace OpenAPI {
       [key: string]: ParameterObject;
     };
     examples?: {
-      [key: string]: OpenAPIV3.ExampleObject;
+      [key: string]: ExampleObject;
     };
     requestBodies?: {
       [key: string]: RequestBodyObject;
@@ -194,15 +200,23 @@ export namespace OpenAPI {
       [key: string]: HeaderObject;
     };
     securitySchemes?: {
-      [key: string]: OpenAPIV3.SecuritySchemeObject;
+      [key: string]: SecuritySchemeObject;
     };
     links?: {
-      [key: string]: OpenAPIV3.LinkObject;
+      [key: string]: LinkObject;
     };
     callbacks?: {
       [key: string]: CallbackObject;
     };
   }
+
+  type InferObj<T> = T extends {
+    [key: string]: infer B;
+  }
+    ? B
+    : never;
+
+  export type ComponentValue = InferObj<ValueOf<ComponentsObject>>;
 
   export interface Document {
     openapi: string;
@@ -215,5 +229,11 @@ export namespace OpenAPI {
     security?: OpenAPIV3.SecurityRequirementObject[];
     tags?: OpenAPIV3.TagObject[];
     externalDocs?: OpenAPIV3.ExternalDocumentationObject;
+  }
+
+  export interface CompletedReferenceInfo {
+    readonly $internalRef?: string[];
+    readonly $referencedTo?: string;
+    readonly $recursiveReference?: boolean;
   }
 }

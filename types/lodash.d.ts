@@ -9,6 +9,7 @@ declare module "lodash" {
      * @param value The value to check.
      * @return Returns true if value is an object, else false.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     isObject(value?: any): value is Record<string, unknown>;
   }
 }

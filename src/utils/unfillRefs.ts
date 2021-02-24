@@ -11,7 +11,11 @@ const pathToRef = (path: string[]): string => {
 };
 
 const removeRefPart = (ref: string, refToRemove: string): string[] => {
-  return _.compact(_.replace(ref, refToRemove, "").split("/"));
+  const splitted = _.split(refToRemove, "/");
+
+  return _.compact(
+    ref.split("/").filter((part) => part !== "#" && !splitted.includes(part))
+  );
 };
 
 class ReferenceData {
@@ -24,15 +28,52 @@ class ReferenceData {
     );
     const ref = this.ref;
     const pathFromRef = pathToRef(this.path);
-    const isRecursive = _.includes(pathFromRef, ref);
 
-    if (isRecursive && _.isObject(refData)) {
+    if (this.isRecursive(refData) && _.isObject(refData)) {
       const recursivePath = removeRefPart(pathFromRef, ref);
       _.set(refData, "$recursiveReference", true);
-      _.set(refData, recursivePath, refData);
+
+      if (!_.includes(recursivePath, "#") && _.has(refData, recursivePath)) {
+        _.set(refData, recursivePath, refData);
+      }
     }
 
     return refData;
+  }
+
+  private isRecursive(refData: unknown) {
+    const ref = this.ref;
+    const pathFromRef = pathToRef(this.path);
+
+    if (_.includes(pathFromRef, ref)) {
+      return true;
+    }
+
+    if (this.deepFindRecursive(refData)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private deepFindRecursive = (refData: unknown): boolean => {
+    if (refData instanceof ReferenceData) {
+      return refData.ref === this.ref;
+    }
+
+    if (_.isObject(refData)) {
+      return _.some(refData, (property) => this.deepFindRecursive(property));
+    }
+
+    return false;
+  };
+
+  public isEqualPath(path: string[]) {
+    return _.join(this.path) === _.join(path);
+  }
+
+  public isEqualRef(ref: string) {
+    return this.ref === ref;
   }
 }
 

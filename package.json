@@ -1,8 +1,12 @@
 {
   "name": "swagger-walker",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "NodeJS utility to help work with Swagger Spec",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "umd:main": "dist/index.js",
+  "jsnext:main": "dist/index.js",
   "watch": {
     "start": {
       "patterns": [
@@ -27,7 +31,10 @@
   "keywords": [
     "swagger",
     "typescript",
-    "javascript"
+    "javascript",
+    "open-api",
+    "openapi",
+    "schema"
   ],
   "author": "acacode",
   "license": "MIT",
