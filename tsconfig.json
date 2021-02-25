@@ -16,7 +16,7 @@
     "esModuleInterop": true,
 
     "inlineSourceMap": false,
-    "importHelpers": true,
+    "importHelpers": false,
     "allowJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,

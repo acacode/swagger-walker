@@ -1,6 +1,6 @@
 {
   "name": "swagger-walker",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "NodeJS utility to help work with Swagger Spec",
   "main": "dist/index.js",
   "module": "dist/index.js",

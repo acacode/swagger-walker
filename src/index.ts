@@ -1,7 +1,6 @@
 import { OpenAPIV2, OpenAPIV3 } from "openapi-types";
 
 import { OpenAPI } from "./interfaces/swagger";
-// import schema from "./schema2.json";
 import { SwaggerWalker } from "./SwaggerWalker/SwaggerWalker";
 import { fixSwaggerScheme } from "./utils/fixSwaggerScheme";
 import { getSwaggerObject } from "./utils/loader";
@@ -51,16 +50,3 @@ export const createSwaggerWalker = async (
     document.convertedFromSwagger2
   );
 };
-
-// createSwaggerWalker({
-// }).then((swaggerWalker) => {
-//   if (swaggerWalker) {
-//     console.info(
-//       "FF"
-//       // swaggerWalker.components.find({
-//       //   kind: "schemas",
-//       //   name: "trees",
-//       // })
-//     );
-//   }
-// });
