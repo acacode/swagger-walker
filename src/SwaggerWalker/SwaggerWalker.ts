@@ -4,7 +4,7 @@ import _ from "lodash";
 import { OpenAPIV2, OpenAPIV3 } from "openapi-types";
 
 import { OpenAPI } from "../interfaces/swagger";
-import { DeepRequired } from "../types/common";
+import { DeepRequired, ValueOf } from "../types/common";
 import { isNullable } from "../utils/isNullable";
 
 import { SwaggerWalkerInfo } from "./types";
@@ -186,6 +186,53 @@ export class SwaggerWalker implements SwaggerWalkerInfo.Document {
         // TODO?
         if (_.startsWith($pattern, "x-")) return walkerPaths;
 
+        const methods = [
+          "delete",
+          "get",
+          "head",
+          "patch",
+          "post",
+          "put",
+          "trace",
+          "options",
+        ] as const;
+
+        type Accumulator = Pick<
+          SwaggerWalkerInfo.PathItemObject,
+          Extract<ValueOf<typeof methods>, string> | "$operations"
+        >;
+
+        const pathObjectPart = methods.reduce<Accumulator>(
+          (acc, method) => {
+            const operation = this.createOperation(
+              $pattern,
+              method,
+              (rawPath[method as keyof OpenAPI.PathItemObject] as unknown) as
+                | OpenAPI.OperationObject
+                | undefined
+            );
+
+            acc[method] = operation;
+
+            if (operation) {
+              acc.$operations.push(operation);
+            }
+
+            return acc;
+          },
+          {
+            $operations: [],
+            delete: null,
+            get: null,
+            head: null,
+            patch: null,
+            post: null,
+            put: null,
+            trace: null,
+            options: null,
+          }
+        );
+
         const path: SwaggerWalkerInfo.PathItemObject = {
           ...rawPath,
           $pattern,
@@ -194,14 +241,7 @@ export class SwaggerWalker implements SwaggerWalkerInfo.Document {
           parameters: _.map(rawPath.parameters || [], this.createParameter),
           servers: rawPath.servers || [],
           summary: rawPath.summary || "",
-          delete: this.createOperation($pattern, "delete", rawPath.delete),
-          get: this.createOperation($pattern, "get", rawPath.get),
-          head: this.createOperation($pattern, "head", rawPath.head),
-          patch: this.createOperation($pattern, "patch", rawPath.patch),
-          post: this.createOperation($pattern, "post", rawPath.post),
-          put: this.createOperation($pattern, "put", rawPath.put),
-          trace: this.createOperation($pattern, "trace", rawPath.trace),
-          options: this.createOperation($pattern, "options", rawPath.options),
+          ...pathObjectPart,
         };
 
         // this.$refsMap.set($internalRef, path);

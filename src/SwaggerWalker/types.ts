@@ -18,6 +18,7 @@ export namespace SwaggerWalkerInfo {
 
   export interface PathItemObject extends OpenAPI.CompletedReferenceInfo {
     readonly $pattern: string;
+    readonly $operations: OperationObject[];
     summary: string;
     description: string;
     get: OperationObject | null;
