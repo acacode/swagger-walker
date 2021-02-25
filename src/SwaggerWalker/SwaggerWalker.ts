@@ -183,6 +183,7 @@ export class SwaggerWalker implements SwaggerWalkerInfo.Document {
     >(
       paths,
       (walkerPaths, rawPath, $pattern) => {
+        // TODO?
         if (_.startsWith($pattern, "x-")) return walkerPaths;
 
         const path: SwaggerWalkerInfo.PathItemObject = {

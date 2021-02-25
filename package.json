@@ -1,6 +1,6 @@
 {
   "name": "swagger-walker",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "NodeJS utility to help work with Swagger Spec",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -76,10 +76,10 @@
     "prettier": "^2.1.2",
     "pretty-quick": "^3.1.0",
     "rimraf": "^3.0.2",
-    "ts-node": "^9.1.1",
-    "typescript": "^4.1.5"
+    "ts-node": "^9.1.1"
   },
   "dependencies": {
+    "typescript": "^4.1.5",
     "axios": "^0.21.1",
     "js-yaml": "^4.0.0",
     "lodash": "^4.17.20",
